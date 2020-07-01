@@ -18,7 +18,7 @@ pub enum VmdkError {
 #[derive(Debug)]
 pub struct ExtentHeader {
     /// The header signature "KDMV"
-    pub magicNumber: u32,
+    pub magic_number: u32,
     /// Version (1, 2, or 3)
     pub version: u32,
     /// Flags
@@ -26,30 +26,30 @@ pub struct ExtentHeader {
     /// Maximum data sectors
     pub capacity: u64,
     /// Grain number of sectors (power of 2 and >8)
-    pub grainSize: u64,
+    pub grain_size: u64,
     /// The sector number of the embedded descriptor file. Offset from 
     /// beginning of file
-    pub descriptorOffset: u64,
+    pub desc_offset: u64,
     /// Number of sectors of the embedded descriptor file
-    pub descriptorSize: u64,
+    pub desc_size: u64,
     /// Number of grain table entries
-    pub numGTEsPerGT: u32,
+    pub gtes_per_gt: u32,
     /// Secondary grain directory sector offset
-    pub rgdOffset: u64,
+    pub rgd_offset: u64,
     /// Grain directory sector number
-    pub gdOffset: u64,
+    pub gd_offset: u64,
     /// Metadata overhead of sectors
-    pub overHead: u64,
+    pub overhead: u64,
     /// Determines if extent data was cleanly closed
-    pub uncleanShutdown: u8,
+    pub dirty_shutdown: u8,
     /// Single EOL character
-    pub singleEndLineChar: u8,
+    pub single_eol_char: u8,
     /// Non EOL character
-    pub nonEndLineChar: u8,
+    pub non_eol_char: u8,
     /// Second double EOL character
-    pub doubleEndLineChar: u8,
+    pub dbl_eol_char: u8,
     /// Compression method
-    pub compressAlgorithm: u16,
+    pub compress_method: u16,
 }
 
 impl ExtentHeader {
@@ -109,22 +109,22 @@ impl ExtentHeader {
         info!("Compression Algo: 0x{:x}", compress_method);
 
         let ext = ExtentHeader {
-            magicNumber: magic,
+            magic_number: magic,
             version: version,
             flags: flags,
             capacity: capacity,
-            grainSize: grain_size,
-            descriptorOffset: desc_offset,
-            descriptorSize: desc_size,
-            numGTEsPerGT: gte_per_gt,
-            rgdOffset: rgd_offset,
-            gdOffset: gd_offset,
-            overHead: meta_overhead,
-            uncleanShutdown: dirty_shutdown,
-            singleEndLineChar: eol_char,
-            nonEndLineChar: non_eol_char,
-            doubleEndLineChar: dbl_eol_char,
-            compressAlgorithm: compress_method,
+            grain_size: grain_size,
+            desc_offset: desc_offset,
+            desc_size: desc_size,
+            gtes_per_gt: gte_per_gt,
+            rgd_offset: rgd_offset,
+            gd_offset: gd_offset,
+            overhead: meta_overhead,
+            dirty_shutdown: dirty_shutdown,
+            single_eol_char: eol_char,
+            non_eol_char: non_eol_char,
+            dbl_eol_char: dbl_eol_char,
+            compress_method: compress_method,
         };
 
         Ok(ext)
@@ -154,7 +154,7 @@ impl Vmdk {
         eprintln!("String: {}", string);
 
         Ok(Vmdk {
-            extent_header: None,
+            extent_header: Some(extent_header),
             file: file,
         })
     }
