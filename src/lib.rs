@@ -1,6 +1,7 @@
 /// "VMDK"
 const EXTENT_MAGIC: u32 = 0x564d444b;
 const EXTENT_VERSION: u32 = 1;
+const SECTOR_SIZE: u32 = 512;
 
 use std::path::Path;
 use std::fs::File;
@@ -16,6 +17,9 @@ pub enum VmdkError {
 }
 
 #[derive(Debug)]
+pub struct SectorType(u64);
+
+#[derive(Debug)]
 pub struct ExtentHeader {
     /// The header signature "KDMV"
     pub magic_number: u32,
@@ -24,22 +28,22 @@ pub struct ExtentHeader {
     /// Flags
     pub flags: u32,
     /// Maximum data sectors
-    pub capacity: u64,
+    pub capacity: SectorType,
     /// Grain number of sectors (power of 2 and >8)
-    pub grain_size: u64,
+    pub grain_size: SectorType,
     /// The sector number of the embedded descriptor file. Offset from 
     /// beginning of file
-    pub desc_offset: u64,
+    pub desc_offset: SectorType,
     /// Number of sectors of the embedded descriptor file
-    pub desc_size: u64,
+    pub desc_size: SectorType,
     /// Number of grain table entries
     pub gtes_per_gt: u32,
     /// Secondary grain directory sector offset
-    pub rgd_offset: u64,
+    pub rgd_offset: SectorType,
     /// Grain directory sector number
-    pub gd_offset: u64,
+    pub gd_offset: SectorType,
     /// Metadata overhead of sectors
-    pub overhead: u64,
+    pub overhead: SectorType,
     /// Determines if extent data was cleanly closed
     pub dirty_shutdown: u8,
     /// Single EOL character
@@ -71,27 +75,34 @@ impl ExtentHeader {
 
         let capacity = reader.read_u64::<LittleEndian>()?;
         info!("Capacity: 0x{:x}", capacity);
+        let capacity = SectorType(capacity);
 
         let grain_size = reader.read_u64::<LittleEndian>()?;
         info!("Grain Size: 0x{:x}", grain_size);
+        let grain_size = SectorType(grain_size);
 
         let desc_offset = reader.read_u64::<LittleEndian>()?;
         info!("Descriptor offset: 0x{:x}", desc_offset);
+        let desc_offset = SectorType(desc_offset);
 
         let desc_size = reader.read_u64::<LittleEndian>()?;
         info!("Descriptor size: 0x{:x}", desc_size);
+        let desc_size = SectorType(desc_size);
 
         let gte_per_gt = reader.read_u32::<LittleEndian>()?;
         info!("GTE's per GT: 0x{:x}", gte_per_gt);
 
         let rgd_offset = reader.read_u64::<LittleEndian>()?;
         info!("Redundant GD offset: 0x{:x}", rgd_offset);
+        let rgd_offset = SectorType(rgd_offset);
 
         let gd_offset = reader.read_u64::<LittleEndian>()?;
         info!("GD Offset: 0x{:x}", gd_offset);
+        let gd_offset = SectorType(gd_offset);
 
         let meta_overhead = reader.read_u64::<LittleEndian>()?;
         info!("Metadata overhead: 0x{:x}", meta_overhead);
+        let meta_overhead = SectorType(meta_overhead);
 
         let dirty_shutdown = reader.read_u8()?;
         info!("Dirty shutdown: 0x{:x}", dirty_shutdown);
@@ -132,7 +143,7 @@ impl ExtentHeader {
 }
 
 pub struct Vmdk {
-    extent_header: Option<ExtentHeader>,
+    pub extent_header: Option<ExtentHeader>,
     file: File,
 }
 
