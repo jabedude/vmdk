@@ -1,8 +1,9 @@
 /// "VMDK"
 const EXTENT_MAGIC: u32 = 0x564d444b;
 const EXTENT_VERSION: u32 = 1;
-const SECTOR_SIZE: u32 = 512;
+const SECTOR_SIZE: u64 = 512;
 
+use std::convert::TryInto;
 use std::path::Path;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
@@ -144,6 +145,7 @@ impl ExtentHeader {
 
 pub struct Vmdk {
     pub extent_header: Option<ExtentHeader>,
+    pub descriptor: Option<String>,
     file: File,
 }
 
@@ -159,13 +161,18 @@ impl Vmdk {
 
         // Embedded Descriptor
         file.seek(SeekFrom::Start(512))?;
-        let mut buf = [0u8; 0x2a0];
+        //let mut buf = [0u8; 0x2a0];
+        let desc_size_in_bytes = extent_header.desc_size.0 * SECTOR_SIZE;
+        let mut buf: Vec<u8> = vec![0u8; desc_size_in_bytes.try_into()?];
         file.read_exact(&mut buf)?;
-        let string = std::str::from_utf8(&buf)?;
-        eprintln!("String: {}", string);
+        let descriptor = std::str::from_utf8(&buf)?.to_owned();
+        let descriptor = descriptor.trim_matches(char::from(0)).to_owned();
+        eprintln!("Descriptor string: {}", descriptor);
+        eprintln!("Descriptor string len: {}", descriptor.len());
 
         Ok(Vmdk {
             extent_header: Some(extent_header),
+            descriptor: Some(descriptor),
             file: file,
         })
     }
@@ -179,5 +186,39 @@ mod tests {
     fn test_vmdk() {
         let vmdk = Vmdk::new("/home/josh/VirtualBox VMs/OMS CS6250 Course \
                              VM/OMS CS6250 Course VM-disk1.vmdk").unwrap();
+    }
+
+    #[test]
+    fn test_descriptor() {
+        let vmdk = Vmdk::new("/home/josh/VirtualBox VMs/OMS CS6250 Course \
+                             VM/OMS CS6250 Course VM-disk1.vmdk").unwrap();
+        let descriptor = r#"# Disk DescriptorFile
+version=1
+CID=def0d352
+parentCID=ffffffff
+createType="monolithicSparse"
+
+# Extent description
+RW 41943040 SPARSE "OMS CS6250 Course VM-disk1.vmdk"
+
+# The disk Data Base 
+#DDB
+
+ddb.virtualHWVersion = "4"
+ddb.adapterType="ide"
+ddb.geometry.cylinders="16383"
+ddb.geometry.heads="16"
+ddb.geometry.sectors="63"
+ddb.geometry.biosCylinders="1024"
+ddb.geometry.biosHeads="255"
+ddb.geometry.biosSectors="63"
+ddb.uuid.image="2ebfd8e9-9868-4688-8f3f-97e3f9def370"
+ddb.uuid.parent="00000000-0000-0000-0000-000000000000"
+ddb.uuid.modification="e2b662bc-16ff-478e-8b7f-3323b027087e"
+ddb.uuid.parentmodification="00000000-0000-0000-0000-000000000000"
+ddb.comment=""
+"#;
+        eprintln!("Descriptor: {}", descriptor);
+        assert_eq!(vmdk.descriptor.unwrap(), descriptor);
     }
 }
