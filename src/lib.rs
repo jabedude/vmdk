@@ -11,6 +11,9 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use failure::{Error, Fail};
 use log::info;
 
+mod descriptor;
+
+
 #[derive(Debug, Fail)]
 pub enum VmdkError {
     #[fail(display = "Parsing error")]
@@ -192,7 +195,7 @@ mod tests {
     fn test_descriptor() {
         let vmdk = Vmdk::new("/home/josh/VirtualBox VMs/OMS CS6250 Course \
                              VM/OMS CS6250 Course VM-disk1.vmdk").unwrap();
-        let descriptor = r#"# Disk DescriptorFile
+        let descriptor_text = r#"# Disk DescriptorFile
 version=1
 CID=def0d352
 parentCID=ffffffff
@@ -218,7 +221,6 @@ ddb.uuid.modification="e2b662bc-16ff-478e-8b7f-3323b027087e"
 ddb.uuid.parentmodification="00000000-0000-0000-0000-000000000000"
 ddb.comment=""
 "#;
-        eprintln!("Descriptor: {}", descriptor);
-        assert_eq!(vmdk.descriptor.unwrap(), descriptor);
+        assert_eq!(vmdk.descriptor.unwrap(), descriptor_text);
     }
 }
