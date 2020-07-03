@@ -18,6 +18,8 @@ mod descriptor;
 pub enum VmdkError {
     #[fail(display = "Parsing error")]
     ParseError,
+    #[fail(display = "Invalid disk type")]
+    InvalidDisk,
 }
 
 #[derive(Debug)]
